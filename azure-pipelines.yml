@@ -13,10 +13,10 @@ variables:
 stages:
 
 # =========================
-# 1. DEV STAGE
+# DEV STAGE
 # =========================
 - stage: Dev
-  displayName: "DEV - Terraform Init/FMT/Validate"
+  displayName: "DEV - Init / FMT / Validate"
   jobs:
   - job: DevJob
     steps:
@@ -46,10 +46,10 @@ stages:
 
 
 # =========================
-# 2. QA STAGE
+# QA STAGE
 # =========================
 - stage: QA
-  displayName: "QA - Terraform Init/Validate"
+  displayName: "QA - Init / Validate"
   dependsOn: Dev
   jobs:
   - job: QAJob
@@ -72,10 +72,10 @@ stages:
 
 
 # =========================
-# 3. PROD STAGE
+# PROD STAGE
 # =========================
 - stage: Prod
-  displayName: "PROD - Terraform Init/Validate"
+  displayName: "PROD - Init / Validate"
   dependsOn: QA
   jobs:
   - job: ProdJob
@@ -98,23 +98,28 @@ stages:
 
 
 # =========================
-# 4. SECURITY SCAN STAGE
+# SECURITY SCAN STAGE
 # =========================
 - stage: SecurityScan
-  displayName: "Terraform Security Scan (TFLint + TFSEC + Checkov)"
+  displayName: "Security Scan - TFLint / TFSEC / Checkov"
   dependsOn: Prod
   jobs:
   - job: ScanJob
     steps:
 
     # =========================
-    # TFLINT (Windows safe install)
+    # TFLINT (Safe Windows install)
     # =========================
     - powershell: |
         Write-Host "Installing TFLint..."
-        Invoke-WebRequest -Uri "https://github.com/terraform-linters/tflint/releases/latest/download/tflint_windows_amd64.zip" -OutFile "tflint.zip"
-        Expand-Archive tflint.zip -DestinationPath "C:\tflint"
-        setx PATH "$env:PATH;C:\tflint"
+
+        Invoke-WebRequest `
+          -Uri "https://github.com/terraform-linters/tflint/releases/latest/download/tflint_windows_amd64.zip" `
+          -OutFile "$(Agent.TempDirectory)\tflint.zip"
+
+        Expand-Archive "$(Agent.TempDirectory)\tflint.zip" -DestinationPath "$(Agent.TempDirectory)\tflint"
+
+        echo "##vso[task.prependpath]$(Agent.TempDirectory)\tflint"
       displayName: "Install TFLint"
 
     - powershell: |
@@ -125,12 +130,18 @@ stages:
 
 
     # =========================
-    # TFSEC
+    # TFSEC (FIXED - no System32)
     # =========================
     - powershell: |
         Write-Host "Installing TFSEC..."
-        Invoke-WebRequest -Uri "https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-windows-amd64.exe" -OutFile "tfsec.exe"
-        Move-Item tfsec.exe C:\Windows\System32\tfsec.exe
+
+        Invoke-WebRequest `
+          -Uri "https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-windows-amd64.exe" `
+          -OutFile "$(Agent.TempDirectory)\tfsec.exe"
+
+        echo "##vso[task.prependpath]$(Agent.TempDirectory)"
+
+        & "$(Agent.TempDirectory)\tfsec.exe" --version
       displayName: "Install TFSEC"
 
     - powershell: |
@@ -143,7 +154,7 @@ stages:
     # CHECKOV
     # =========================
     - powershell: |
-        pip install checkov
+        pip install --upgrade checkov
       displayName: "Install Checkov"
 
     - powershell: |
