@@ -1,0 +1,144 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  name: Dockernewagent
+
+variables:
+  terraformVersion: '1.6.6'
+
+stages:
+
+# =========================
+# 1. DEV STAGE - INIT + FMT + VALIDATE
+# =========================
+- stage: Dev
+  displayName: "Terraform Dev Stage"
+  jobs:
+  - job: DevTerraform
+    steps:
+
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: $(terraformVersion)
+
+    # INIT
+    - task: TerraformTask@5
+      displayName: "Terraform Init - Dev"
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Root/Dev'
+        backendServiceArm: 'ACRAKS'
+        backendAzureRmStorageAccountName: 'gauravbackupstorage'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'dev.tfstate'
+
+    # FMT
+    - script: terraform fmt -recursive
+      displayName: "Terraform Format Check"
+
+    # VALIDATE
+    - script: terraform validate
+      workingDirectory: '$(System.DefaultWorkingDirectory)/Root/Dev'
+      displayName: "Terraform Validate"
+
+
+# =========================
+# 2. QA STAGE - INIT + VALIDATE
+# =========================
+- stage: QA
+  displayName: "Terraform QA Stage"
+  dependsOn: Dev
+  jobs:
+  - job: QATerraform
+    steps:
+
+    - task: TerraformTask@5
+      displayName: "Terraform Init - QA"
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Root/QA'
+        backendServiceArm: 'ACRAKS'
+        backendAzureRmStorageAccountName: 'gauravbackupstorage'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'qa.tfstate'
+
+    - script: terraform validate
+      workingDirectory: '$(System.DefaultWorkingDirectory)/Root/QA'
+      displayName: "Terraform Validate - QA"
+
+
+# =========================
+# 3. PROD STAGE - INIT + VALIDATE
+# =========================
+- stage: Prod
+  displayName: "Terraform Prod Stage"
+  dependsOn: QA
+  jobs:
+  - job: ProdTerraform
+    steps:
+
+    - task: TerraformTask@5
+      displayName: "Terraform Init - Prod"
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/Root/Prod'
+        backendServiceArm: 'ACRAKS'
+        backendAzureRmStorageAccountName: 'gauravbackupstorage'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'prod.tfstate'
+
+    - script: terraform validate
+      workingDirectory: '$(System.DefaultWorkingDirectory)/Root/Prod'
+      displayName: "Terraform Validate - Prod"
+
+
+# =========================
+# 4. SECURITY SCAN STAGE (tfsec + checkov + tflint)
+# =========================
+- stage: SecurityScan
+  displayName: "Terraform Security Scanning"
+  dependsOn: Prod
+  jobs:
+  - job: Scan
+    steps:
+
+    # Install tools
+    - script: |
+        curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+      displayName: "Install TFLint"
+
+    - script: |
+        pip install checkov
+      displayName: "Install Checkov"
+
+    - script: |
+        curl -sSfL https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+      displayName: "Install TFSEC"
+
+    # TFLINT
+    - script: |
+        tflint --init
+        tflint
+      workingDirectory: '$(System.DefaultWorkingDirectory)/Root'
+      displayName: "Run TFLint"
+
+    # TFSEC
+    - script: |
+        tfsec .
+      workingDirectory: '$(System.DefaultWorkingDirectory)/Root'
+      displayName: "Run TFSEC Scan"
+
+    # CHECKOV
+    - script: |
+        checkov -d .
+      workingDirectory: '$(System.DefaultWorkingDirectory)/Root'
+      displayName: "Run Checkov Scan"
