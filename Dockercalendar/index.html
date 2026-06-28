@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>June 2026 Calendar</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial;
+        background: linear-gradient(270deg, #ff6a00, #ee0979, #00c6ff, #7f00ff);
+        background-size: 800% 800%;
+        animation: bgAnim 10s ease infinite;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    @keyframes bgAnim {
+        0% {background-position:0% 50%}
+        50% {background-position:100% 50%}
+        100% {background-position:0% 50%}
+    }
+
+    .calendar {
+        width: 80%;
+        max-width: 900px;
+        background: rgba(0,0,0,0.5);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 0 20px cyan;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 40px;
+        margin-bottom: 20px;
+        animation: glow 2s infinite alternate;
+    }
+
+    @keyframes glow {
+        from {text-shadow: 0 0 10px white;}
+        to {text-shadow: 0 0 25px yellow;}
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+    }
+
+    .day, .date {
+        padding: 15px;
+        border-radius: 10px;
+    }
+
+    .day {
+        background: rgba(255,255,255,0.2);
+        font-weight: bold;
+    }
+
+    .date {
+        background: rgba(0,0,0,0.3);
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+    .date:hover {
+        background: cyan;
+        color: black;
+        transform: scale(1.1);
+    }
+</style>
+</head>
+
+<body>
+<div class="calendar">
+    <h1>📅 JUNE 2026</h1>
+
+    <div class="grid">
+        <div class="day">Sun</div>
+        <div class="day">Mon</div>
+        <div class="day">Tue</div>
+        <div class="day">Wed</div>
+        <div class="day">Thu</div>
+        <div class="day">Fri</div>
+        <div class="day">Sat</div>
+
+        <!-- June 2026 starts Monday (1 June 2026 = Monday) -->
+        <div></div>
+        <div class="date">1</div>
+        <div class="date">2</div>
+        <div class="date">3</div>
+        <div class="date">4</div>
+        <div class="date">5</div>
+        <div class="date">6</div>
+
+        <div class="date">7</div>
+        <div class="date">8</div>
+        <div class="date">9</div>
+        <div class="date">10</div>
+        <div class="date">11</div>
+        <div class="date">12</div>
+        <div class="date">13</div>
+
+        <div class="date">14</div>
+        <div class="date">15</div>
+        <div class="date">16</div>
+        <div class="date">17</div>
+        <div class="date">18</div>
+        <div class="date">19</div>
+        <div class="date">20</div>
+
+        <div class="date">21</div>
+        <div class="date">22</div>
+        <div class="date">23</div>
+        <div class="date">24</div>
+        <div class="date">25</div>
+        <div class="date">26</div>
+        <div class="date">27</div>
+
+        <div class="date">28</div>
+        <div class="date">29</div>
+        <div class="date">30</div>
+    </div>
+</div>
+</body>
+</html>
